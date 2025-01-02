@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # =============================================
-#  MULLVAD-VPN SPEC UPDATE SCRIPT
+#  MULLVAD-VPN SPEC UPDATER SCRIPT
 # =============================================
 # USAGE:
-# bash update.py <OSC_REPO_DIR>
+# bash updater.sh <OSC_REPO_DIR>
 
 set -xe
 
@@ -28,13 +28,19 @@ REL_URL="https://api.github.com/repos/mullvad/mullvadvpn-app/releases"
 mkdir -p "${SRC_REPO_DIR}"
 curl -o "${SRC_REPO_DIR}"/release_list.json "${REL_URL}"
 # By default, we do not package beta version
-TAG_NAME=$(jq -r '.[] | select(.tag_name | contains("beta") | not) | .tag_name' "${SRC_REPO_DIR}"/release_list.json | head -n 1)
+TAG_NAME=$(jq -r '.[] | select(.tag_name | contains("beta") or contains("android") | not) | .tag_name' "${SRC_REPO_DIR}"/release_list.json | head -n 1)
 RPM_URL=$(jq -r --arg TAG_NAME "${TAG_NAME}" --arg ARCH "${ARCH}" '.[] | select(.tag_name == $TAG_NAME) | .assets[] | select(.browser_download_url | endswith($ARCH + ".rpm")) | .browser_download_url' /tmp/xz/osc-packager/release_list.json)
 RPM_FILE_NAME=$(basename ${RPM_URL})
 
+echo "Getting current repo revision..."
+CURRENT_TAG=$(awk '/^\s*%define ver/ {match($0, /[0-9]+\.[0-9]+/, ary);print ary[0]}' mullvadvpn.spec)
+if [[ $CURRENT_TAG == $TAG_NAME ]]; then
+    echo "The current tag is the latest: ${TAG_NAME}. Skipping the update."
+    exit 0
+fi
 
 echo "Cleanup OSC Repo..."
-rm ${OSC_REPO_DIR}/*.tar.gz ${OSC_REPO_DIR}/*.rpm*
+rm ${OSC_REPO_DIR}/*.tar.gz ${OSC_REPO_DIR}/*.rpm* || true
 
 echo "Download and validate RPM and ASC..."
 curl -L -o "${OSC_REPO_DIR}"/${RPM_FILE_NAME} ${RPM_URL}
@@ -66,9 +72,16 @@ cargo vendor > "${OSC_REPO_DIR}"/cargo-config
 tar czf "${OSC_REPO_DIR}"/mullvadvpn-app-vendor.tar.gz --remove-files vendor
 
 
-echo "Tar source code..."
-tar --exclude=".git" --exclude=".github" --transform 's,^,mullvadvpn-app-2024.8/,' -czf "${OSC_REPO_DIR}"/mullvadvpn-app-2024.8.tar.gz *
+echo "Update _service and spec file..."
+pushd "${OSC_REPO_DIR}"
+awk -v tag_name="${TAG_NAME}" '/^\s*%define ver/ {sub(/[0-9]+\.[0-9]+/, tag_name);}1' mullvadvpn.spec > mullvadvpn.spec.backup
+mv mullvadvpn.spec.backup mullvadvpn.spec
+awk -v tag_name="${TAG_NAME}" '/^\s*<param name="revision">/ {sub(/[0-9]+\.[0-9]+/, tag_name);}1' _service > _service.backup
+mv _service.backup _service
+popd
 
 
 echo "Remove source code repo..."
 [[ -d "${SRC_REPO_DIR}" ]] && rm -rf "${SRC_REPO_DIR}"
+
+echo "Success!"
