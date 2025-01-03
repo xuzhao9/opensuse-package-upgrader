@@ -1,0 +1,20 @@
+name: opensuse update packages
+on:
+  workflow_dispatch:
+
+jobs:
+  update-packages:
+    environment: ci
+    env:
+      OBS_USERNAME: ${{ secrets.OBS_USERNAME }}
+      OBS_PASSWD: ${{ secrets.OBS_PASSWD }}
+    runs-on: ubuntu-latest
+    container:
+      image: opensuse/tumbleweed:latest
+    timeout-minutes: 240
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup build environment
+        run: |
+          bash ./.ci/scripts/setup-env.sh
