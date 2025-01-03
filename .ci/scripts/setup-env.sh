@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-echo "using OBS user: ${OBS_USERNAME}"
-
 # install dependencies in the container
 zypper in -y \
     osc build sudo obs-service-download_files obs-service-recompress \
@@ -16,8 +14,8 @@ cat<<EOF > $HOME/.config/osc/oscrc
 apiurl=https://api.opensuse.org
 
 [https://api.opensuse.org]
-user=${OBS_USERNAME}
-pass=${OBS_PASSWD}
+user=${OSC_USERNAME}
+pass=${OSC_PASSWD}
 credentials_mgr_class=osc.credentials.PlaintextConfigFileCredentialsManager
 EOF
 
