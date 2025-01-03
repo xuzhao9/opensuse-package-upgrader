@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+echo "using OBS user: ${OBS_USERNAME}"
+
 # install dependencies in the container
 zypper in -y \
     osc build sudo obs-service-download_files obs-service-recompress \
