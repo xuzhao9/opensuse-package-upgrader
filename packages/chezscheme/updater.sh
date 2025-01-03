@@ -13,8 +13,9 @@ if [ -z "$1" ]; then
     exit 1
 fi
 OSC_REPO_DIR="$1"
-if [ ! -f "${OSC_REPO_DIR}"/chezscheme.spec ]; then
-    echo "${OSC_REPO_DIR}/chezscheme.spec must exist to proceed."
+OSC_SPEC_FILE="chezscheme.spec"
+if [ ! -f "${OSC_REPO_DIR}"/"${OSC_SPEC_FILE}" ]; then
+    echo "${OSC_REPO_DIR}/${OSC_SPEC_FILE} must exist to proceed."
     exit 1
 fi
 
@@ -37,8 +38,8 @@ fi
 # Replace the revision field
 echo "Updating _service and spec file..."
 pushd "${OSC_REPO_DIR}"
-awk -v tag_name="${TAG_NAME}" '/^Version: / {sub(/[0-9]+\.[0-9]+/, tag_name);}1' chezscheme.spec > chezscheme.spec.backup
-mv chezscheme.spec.backup chezscheme.spec
+awk -v tag_name="${TAG_NAME}" '/^Version: / {sub(/[0-9]+\.[0-9]+/, tag_name);}1' ${OSC_SPEC_FILE} > ${OSC_SPEC_FILE}.backup
+mv ${OSC_SPEC_FILE}.backup ${OSC_SPEC_FILE}
 awk -v tag_name="${TAG_NAME}" '/^\s*<param name="revision">/ {sub(/[0-9]+\.[0-9]+/, tag_name);}1' _service > _service.backup
 mv _service.backup _service
 popd
