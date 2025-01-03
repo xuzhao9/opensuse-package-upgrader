@@ -19,7 +19,5 @@ pass=${OBS_PASSWD}
 credentials_mgr_class=osc.credentials.PlaintextConfigFileCredentialsManager
 EOF
 
-cat $HOME/.config/osc/oscrc
-
 osc person
 echo "OBS login successful"

@@ -5,9 +5,6 @@ on:
 jobs:
   update-packages:
     environment: ci
-    env:
-      OBS_USERNAME: ${{ secrets.OBS_USERNAME }}
-      OBS_PASSWD: ${{ secrets.OBS_PASSWD }}
     runs-on: ubuntu-latest
     container:
       image: opensuse/tumbleweed:latest
@@ -16,5 +13,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Setup build environment
+        env:
+          OBS_USERNAME: ${{ secrets.OBS_USERNAME }}
+          OBS_PASSWD: ${{ secrets.OBS_PASSWD }}
         run: |
           bash ./.ci/scripts/setup-env.sh
