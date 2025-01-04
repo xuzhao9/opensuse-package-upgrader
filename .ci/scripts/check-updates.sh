@@ -27,8 +27,8 @@ else
     osc co home:nuklly/mullvadvpn
     popd
     mullvadvpn_workdir="$workdir/home:nuklly/mullvadvpn"
-    old_version=$(awk '/^The current version/ {match($0, /update: (.*) -> (.*)/);print ary[1]}' $workdir/mullvadvpn.log)
-    new_version=$(awk '/^The current version/ {match($0, /update: (.*) -> (.*)/);print ary[2]}' $workdir/mullvadvpn.log)
+    old_version=$(awk '/^The current version/ {match($0, /update: (.*) -> (.*)/, ary);print ary[1]}' $workdir/mullvadvpn.log)
+    new_version=$(awk '/^The current version/ {match($0, /update: (.*) -> (.*)/, ary);print ary[2]}' $workdir/mullvadvpn.log)
     bash "${repo_dir}"/packages/mullvadvpn/updater.sh ${mullvadvpn_workdir}
     osc ci -m "update from ${old_version} to ${new_version}"
     echo "Mullvadvpn is updated."
