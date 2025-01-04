@@ -13,6 +13,7 @@ if [ -z "$1" ]; then
     exit 1
 fi
 OSC_REPO_DIR=$1; shift
+PACKAGE_NAME=$(basename "${OSC_REPO_DIR}")
 optspec="c"
 while getopts "$optspec" optchar; do
     case $optchar in
@@ -32,7 +33,7 @@ if [ ! -f "${OSC_REPO_DIR}"/"${OSC_SPEC_FILE}" ]; then
 fi
 
 # Get tag_name, rpm url, and rpm_sig_url
-SRC_REPO_DIR="/tmp/${USER}/osc-packager"
+SRC_REPO_DIR="/tmp/osc-packager/${PACKAGE_NAME}"
 [[ -d "${SRC_REPO_DIR}" ]] && rm -rf "${SRC_REPO_DIR}"
 mkdir -p "${SRC_REPO_DIR}"
 curl -o "${SRC_REPO_DIR}"/release_list.json "${REPO_URL}"
@@ -44,8 +45,8 @@ if [[ -z "${TAG_NAME}" ]]; then
 fi
 
 echo "Getting current repo revision..."
-CURRENT_TAG=$(pushd ${OSC_REPO_DIR}; awk '/^Version: / {match($0, /[0-9.]+/, ary);print ary[0]}' ${OSC_SPEC_FILE})
-if [[ "${CURRENT_TAG}" == $TAG_NAME ]]; then
+CURRENT_TAG=$(awk '/^Version: / {match($0, /[0-9.]+/, ary);print ary[0]}' "${OSC_REPO_DIR}/${OSC_SPEC_FILE}")
+if [[ "${CURRENT_TAG}" == "${TAG_NAME}" ]]; then
     echo "The current tag is the latest: ${TAG_NAME}. Skipping the update."
     exit 0
 fi
