@@ -4,7 +4,7 @@
 zypper in -y \
     osc build sudo obs-service-download_files obs-service-recompress \
     obs-service-set_version obs-service-source_validator obs-service-tar_scm \
-    obs-service-verify_file obs-service-format_spec_file jq
+    obs-service-verify_file obs-service-format_spec_file jq awk curl rpm git
 
 # write to obs credentials
 mkdir -p $HOME/.config/osc

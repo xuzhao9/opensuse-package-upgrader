@@ -12,7 +12,18 @@ if [ -z "$1" ]; then
     echo "Must provide OSC_REPO_DIR as the first argument."
     exit 1
 fi
-OSC_REPO_DIR="$1"
+OSC_REPO_DIR="$1"; shift
+PACKAGE_NAME=$(basename "${OSC_REPO_DIR}")
+optspec="c"
+while getopts "$optspec" optchar; do
+    case $optchar in
+        c) CHECK_ONLY=true
+           ;;
+        ?) echo "Invalid option -$optchar" ; exit 1;
+    esac
+done
+OSC_SPEC_FILE="mullvadvpn.spec"
+REPO_URL="https://api.github.com/repos/mullvad/mullvadvpn-app/releases"
 # Check that ${OSC_REPO_DIR}/mullvadvpn.spec exists
 if [ ! -f "${OSC_REPO_DIR}"/mullvadvpn.spec ]; then
     echo "${OSC_REPO_DIR}/mullvadvpn.spec must exist to proceed."
@@ -22,20 +33,29 @@ fi
 ARCH="x86_64"
 
 # Get tag_name, rpm url, and rpm_sig_url
-SRC_REPO_DIR="/tmp/${USER}/osc-packager/"
-REL_URL="https://api.github.com/repos/mullvad/mullvadvpn-app/releases"
+SRC_REPO_DIR="/tmp/osc-packager/${PACKAGE_NAME}"
 [[ -d "${SRC_REPO_DIR}" ]] && rm -rf "${SRC_REPO_DIR}"
 mkdir -p "${SRC_REPO_DIR}"
-curl -o "${SRC_REPO_DIR}"/release_list.json "${REL_URL}"
+curl -o "${SRC_REPO_DIR}"/release_list.json "${REPO_URL}"
 # By default, we do not package beta version
 TAG_NAME=$(jq -r '.[] | select(.tag_name | contains("beta") or contains("android") | not) | .tag_name' "${SRC_REPO_DIR}"/release_list.json | head -n 1)
-RPM_URL=$(jq -r --arg TAG_NAME "${TAG_NAME}" --arg ARCH "${ARCH}" '.[] | select(.tag_name == $TAG_NAME) | .assets[] | select(.browser_download_url | endswith($ARCH + ".rpm")) | .browser_download_url' /tmp/xz/osc-packager/release_list.json)
+RPM_URL=$(jq -r --arg TAG_NAME "${TAG_NAME}" --arg ARCH "${ARCH}" '.[] | select(.tag_name == $TAG_NAME) | .assets[] | select(.browser_download_url | endswith($ARCH + ".rpm")) | .browser_download_url' "${SRC_REPO_DIR}"/release_list.json)
 RPM_FILE_NAME=$(basename ${RPM_URL})
+if [[ -z "${TAG_NAME}" ]]; then
+    echo "Unexpected empty TAG_NAME. Exit."
+    exit 1
+fi
 
 echo "Getting current repo revision..."
-CURRENT_TAG=$(awk '/^\s*%define ver/ {match($0, /[0-9]+\.[0-9]+/, ary);print ary[0]}' mullvadvpn.spec)
+CURRENT_TAG=$(awk '/^\s*%define ver/ {match($0, /[0-9.]+/, ary);print ary[0]}' ${OSC_REPO_DIR}/${OSC_SPEC_FILE})
 if [[ $CURRENT_TAG == $TAG_NAME ]]; then
     echo "The current tag is the latest: ${TAG_NAME}. Skipping the update."
+    exit 0
+fi
+
+echo "The current version does not meet the latest tag name and requires update: ${CURRENT_TAG} -> ${TAG_NAME}"
+if [[ ${CHECK_ONLY:-false} == true ]]; then
+    echo "Exiting as check-only script."
     exit 0
 fi
 
@@ -74,8 +94,8 @@ tar czf "${OSC_REPO_DIR}"/mullvadvpn-app-vendor.tar.gz --remove-files vendor
 
 echo "Update _service and spec file..."
 pushd "${OSC_REPO_DIR}"
-awk -v tag_name="${TAG_NAME}" '/^\s*%define ver/ {sub(/[0-9]+\.[0-9]+/, tag_name);}1' mullvadvpn.spec > mullvadvpn.spec.backup
-mv mullvadvpn.spec.backup mullvadvpn.spec
+awk -v tag_name="${TAG_NAME}" '/^\s*%define ver/ {sub(/[0-9]+\.[0-9]+/, tag_name);}1' ${OSC_SPEC_FILE} > ${OSC_SPEC_FILE}.backup
+mv ${OSC_SPEC_FILE}.backup ${OSC_SPEC_FILE}
 awk -v tag_name="${TAG_NAME}" '/^\s*<param name="revision">/ {sub(/[0-9]+\.[0-9]+/, tag_name);}1' _service > _service.backup
 mv _service.backup _service
 popd
