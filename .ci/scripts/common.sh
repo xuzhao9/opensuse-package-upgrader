@@ -42,6 +42,7 @@ function commit() {
     new_version=$(awk '/^The current version/ {match($0, /update: (.*) -> (.*)/, ary);print ary[2]}' $workdir/$osc_pkg_name.log)
     pushd "${osc_path}"
     osc addremove .
+    osc vc -m "update to ${new_version}"
     osc ci -m "update from ${old_version} to ${new_version}"
     popd
 }
