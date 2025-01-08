@@ -7,6 +7,9 @@ zypper in -y \
     obs-service-verify_file obs-service-format_spec_file jq awk curl rpm git \
     rustup go1.20
 
+# download and setup rust
+rustup default stable
+
 # write to obs credentials
 mkdir -p $HOME/.config/osc
 cat<<EOF > $HOME/.config/osc/oscrc
