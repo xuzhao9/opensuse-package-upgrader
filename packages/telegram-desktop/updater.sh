@@ -62,8 +62,17 @@ echo "Updating _service and spec file..."
 pushd "${OSC_REPO_DIR}"
 awk -v tag_name="${TAG_NAME_WITHOUT_V}" '/^Version: / {sub(/[0-9.]+/, tag_name);}1' ${OSC_SPEC_FILE} > ${OSC_SPEC_FILE}.backup
 mv ${OSC_SPEC_FILE}.backup ${OSC_SPEC_FILE}
-awk -v tag_name="${TAG_NAME}" '/^\s*<param name="revision">/ {sub(/[0-9.]+/, tag_name);}1' _service > _service.backup
+# Only replace the first version
+awk -v tag_name="${TAG_NAME_WITHOUT_V}" '{
+  if (!found && /^\s*<param name="revision">/ && sub(/[0-9.]+/, tag_name))
+    found=1
+}1' _service > _service.backup
 mv _service.backup _service
+popd
+
+echo "Running service..."
+pushd "${OSC_REPO_DIR}"
+osc service mr
 popd
 
 echo "Remove source code repo..."
