@@ -1,6 +1,129 @@
 # Generate SVG that shows the current package version, build status, and the latest version
+from pathlib import Path
+import argparse
+import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import ElementTree, Element
 
+from typing import List, Dict
 
+TEMPLATE_FILE = Path(__file__).parent.joinpath("packaging-status-template.svg")
+PACKAGES_DIR = Path(__file__).parent.parent.joinpath("packages")
+
+HEADER_HEIGHT = 45
+PACKAGE_HEIGHT = 20
+ALL_PACKAGE_STATUS = {}
+
+TEXT_X_BASELINE = 231
+TEXT_Y_BASELINE = 36
+TEXT_X_OFFSET = 45
+
+STATUS_KEYS = ["package_name", "current_version", "build_status", "latest_version"]
+
+def find_packages():
+    packages = [x.name for x in PACKAGES_DIR.iterdir() if x.is_dir()]
+    return packages
+
+def get_package_status(package: str) -> Dict[str, str]:
+    return {
+        "package_name": package,
+        "current_version": "9.5.0",
+        "build_status": "succeeded",
+        "latest_version": "9.5.0",
+    }
+
+def load_svg(svg_file: Path):
+    tree = ET.parse(svg_file)
+    return tree
+
+def update_svg_header(svg: ElementTree, packages: List[str]):
+    root = svg.getroot()
+    height = HEADER_HEIGHT + PACKAGE_HEIGHT * len(packages)
+    root.set('height', str(height))
+
+def find_first_g_element(root: Element) -> Element | None:
+    """Finds and returns the first <g> element in the SVG."""
+    namespace = {'svg': 'http://www.w3.org/2000/svg'}  # Define namespace
+    return root.find('.//svg:g', namespace)  # Finds the first <g> element
+
+def add_package_name_version(g: Element, y_offset: int, status: Dict[str, str]):
+    def _add_text_element(x_offset, y_offset, text_anchor, fill, fill_opacity, text):
+        text_element = ET.Element('text', {
+            'x': str(x_offset),
+            'y': str(y_offset),
+            'text-anchor': text_anchor,
+            'domain-baseline': 'central',
+            'fill': fill,
+            'fill-opacity': str(fill_opacity),
+        })
+        text_element.text = text
+        g.append(text_element)
+        text_element_2 = ET.Element('text', {
+            'x': str(x_offset),
+            'y': str(y_offset - 1),
+            'text-anchor': text_anchor,
+            'domain-baseline': 'central',
+        })
+        text_element_2.text = text
+        g.append(text_element_2)
+    for offset, key in enumerate(STATUS_KEYS):
+        x_offset = TEXT_X_BASELINE + offset * TEXT_X_OFFSET
+        text_anchor = 'end' if offset == 0 else 'middle'
+        fill = '#010101'
+        fill_opacity = 0.3
+        text = status[key]
+        _add_text_element(x_offset, y_offset, text_anchor, fill, fill_opacity, text)
+
+def add_package_background(g: Element, package: str, status: Dict[str, str]):
+    rect1 = ET.Element('rect', {
+        'x': '',
+        'y': '',
+        'width': '',
+        'height': '',
+        'fill': '',
+    })
+    rect2 = ET.Element('rect', {
+        'x': '',
+        'y': '',
+        'width': '',
+        'height': '',
+        'fill': '',
+    })
+    g.append(rect1)
+    g.append(rect2)
+
+def add_g_element(first_g: Element) -> Element:
+    child_g = ET.Element('g', {
+        'fill': '#fff',
+        'font-family': 'DejaVu Sans,Verdana,Geneva,sans-serif',
+        'font-size': '11',
+    })
+    first_g.append(child_g)
+    return child_g
+
+def save_svg(tree: ElementTree, output_path: str) -> None:
+    """Saves the modified SVG file."""
+    tree.write(output_path, encoding='utf-8', xml_declaration=True)
 
 if __name__ == "__main__":
-    pass
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", required=True, help="Output file path.")
+    args = parser.parse_args()
+    svg_tree = load_svg(TEMPLATE_FILE)
+    packages = find_packages()
+    # update the header
+    update_svg_header(svg_tree, packages)
+    first_g = find_first_g_element(svg_tree.getroot())
+    for package in packages:
+        status = get_package_status(package)
+        ALL_PACKAGE_STATUS[package] = status
+        add_package_background(first_g, package, status)
+    for offset, package in enumerate(packages):
+        y_offset = TEXT_Y_BASELINE + offset * PACKAGE_HEIGHT
+        child_g = add_g_element(first_g)
+        status = ALL_PACKAGE_STATUS[package]
+        add_package_name_version(
+            child_g,
+            y_offset,
+            status,
+        )
+    save_svg(svg_tree, args.output)

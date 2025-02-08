@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="476" height="45">
+<clipPath id="clip"><rect rx="3" width="100%" height="100%" fill="#000"/></clipPath>
+<linearGradient id="grad" x2="0" y2="100%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+</linearGradient>
+<g clip-path="url(#clip)">
+    <!-- header: 13 -->
+    <rect width="100%" height="100%" fill="#555"/>
+    <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="15" font-weight="bold">
+        <text x="238" y="13" dominant-baseline="central" fill="#010101" fill-opacity=".3">Packaging status</text>
+        <text x="238" y="12" dominant-baseline="central">Packaging status</text>
+    </g>
+    <!-- [row] height: 20, width: 80 -->
+    <!-- failed/outdated: #e05d44 succeeded/up-to-date: #4c1  -->
+</g>
+</svg>
