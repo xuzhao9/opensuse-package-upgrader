@@ -53,7 +53,12 @@ if [[ "${CURRENT_TAG}" == "${TAG_NAME_WITHOUT_V}" ]]; then
 fi
 echo "The current version does not meet the latest tag name and requires update: ${CURRENT_TAG} -> ${TAG_NAME_WITHOUT_V}"
 if [[ ${CHECK_ONLY:-false} == true ]]; then
-    echo "Exiting as check-only script."
+    echo "Exiting as check-only script. Writing results to /tmp/osc-packager/telegram-desktop.json"
+    jq -n --arg name ${PACKAGE_NAME} \
+       --arg cv ${CURRENT_TAG} \
+       --arg lv ${TAG_NAME} \
+       '{ name: $ARGS.name, current_version: $ARGS.cv, latest_version: $ARGS.lv}' \
+       > /tmp/osc-packager/${PACKAGE_NAME}.json
     exit 0
 fi
 
