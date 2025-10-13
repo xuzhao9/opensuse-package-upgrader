@@ -1,7 +1,9 @@
 # Generate SVG that shows the current package version, build status, and the latest version
-from pathlib import Path
 import argparse
+import json
 import xml.etree.ElementTree as ET
+
+from pathlib import Path
 from xml.etree.ElementTree import ElementTree, Element
 
 from typing import List, Dict
@@ -29,12 +31,18 @@ def find_packages():
     packages = [x.name for x in PACKAGES_DIR.iterdir() if x.is_dir()]
     return packages
 
+def get_package_build_status(package: str):
+    pass
+
 def get_package_status(package: str) -> Dict[str, str]:
+    package_status_json = f"/tmp/osc-packager/{package}.json"
+    with open(package_status_json, "r") as fp:
+        package_status = json.load(fp)
     return {
         "package_name": package,
-        "current_version": "9.3.0",
+        "current_version": package_status["current_version"],
         "build_status": "succeeded",
-        "latest_version": "9.5.0",
+        "latest_version": package_status["latest_version"],
     }
 
 def load_svg(svg_file: Path):

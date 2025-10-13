@@ -40,11 +40,15 @@ curl -o "${SRC_REPO_DIR}"/release_list.json "${REPO_URL}"
 # By default, we do not package beta version
 TAG_NAME=$(jq -r '.[] | select(.tag_name | contains("beta") or contains("android") | not) | .tag_name' "${SRC_REPO_DIR}"/release_list.json | head -n 1)
 RPM_URL=$(jq -r --arg TAG_NAME "${TAG_NAME}" --arg ARCH "${ARCH}" '.[] | select(.tag_name == $TAG_NAME) | .assets[] | select(.browser_download_url | endswith($ARCH + ".rpm")) | .browser_download_url' "${SRC_REPO_DIR}"/release_list.json)
-RPM_FILE_NAME=$(basename ${RPM_URL})
 if [[ -z "${TAG_NAME}" ]]; then
     echo "Unexpected empty TAG_NAME. Exit."
     exit 1
 fi
+if [[ -z "${RPM_URL}" ]]; then
+    echo "Unexpected empty RPM_URL. Exit."
+    exit 1
+fi
+RPM_FILE_NAME=$(basename ${RPM_URL})
 
 echo "Getting current repo revision..."
 CURRENT_TAG=$(awk '/^\s*%define ver/ {match($0, /[0-9.]+/, ary);print ary[0]}' ${OSC_REPO_DIR}/${OSC_SPEC_FILE})
@@ -82,7 +86,7 @@ git submodule update --init --recursive
 
 
 echo "Generate relay list..."
-cargo run --bin relay_list --release > "${OSC_REPO_DIR}"/relays.json
+cargo run -p mullvad-api --bin relay_list --release > "${OSC_REPO_DIR}"/relays.json
 
 
 echo "Vendor wireguard-go-rs/libwg..."

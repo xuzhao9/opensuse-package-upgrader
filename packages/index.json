@@ -1,0 +1,14 @@
+{
+	"chezscheme": {
+		"obs": "home:nuklly:branches:devel:languages:misc/chezscheme"
+	},
+	"mullvadvpn": {
+		"obs": "home:nuklly/mullvadvpn"
+	},
+	"telegram-desktop": {
+		"obs": "home:nuklly:branches:server:messaging/telegram-desktop"
+	},
+	"yacreader": {
+		"obs": "home:nuklly:branches:multimedia:apps/yacreader"
+	}
+}
