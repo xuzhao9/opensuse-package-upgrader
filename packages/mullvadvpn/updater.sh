@@ -24,13 +24,13 @@ while getopts "$optspec" optchar; do
 done
 OSC_SPEC_FILE="mullvadvpn.spec"
 REPO_URL="https://api.github.com/repos/mullvad/mullvadvpn-app/releases"
+ARCH="x86_64"
+
 # Check that ${OSC_REPO_DIR}/mullvadvpn.spec exists
 if [ ! -f "${OSC_REPO_DIR}"/mullvadvpn.spec ]; then
     echo "${OSC_REPO_DIR}/mullvadvpn.spec must exist to proceed."
     exit 1
 fi
-
-ARCH="x86_64"
 
 # Get tag_name, rpm url, and rpm_sig_url
 SRC_REPO_DIR="/tmp/osc-packager/${PACKAGE_NAME}"
@@ -38,16 +38,26 @@ SRC_REPO_DIR="/tmp/osc-packager/${PACKAGE_NAME}"
 mkdir -p "${SRC_REPO_DIR}"
 curl -o "${SRC_REPO_DIR}"/release_list.json "${REPO_URL}"
 # By default, we do not package beta version
-TAG_NAME=$(jq -r '.[] | select(.tag_name | contains("beta") or contains("android") | not) | .tag_name' "${SRC_REPO_DIR}"/release_list.json | head -n 1)
-RPM_URL=$(jq -r --arg TAG_NAME "${TAG_NAME}" --arg ARCH "${ARCH}" '.[] | select(.tag_name == $TAG_NAME) | .assets[] | select(.browser_download_url | endswith($ARCH + ".rpm")) | .browser_download_url' "${SRC_REPO_DIR}"/release_list.json)
-if [[ -z "${TAG_NAME}" ]]; then
-    echo "Unexpected empty TAG_NAME. Exit."
+TAG_NAMES=$(jq -r '.[] | select(.tag_name | contains("beta") or contains("android") | not) | .tag_name' "${SRC_REPO_DIR}"/release_list.json)
+readarray -t TAG_ARRAY <<< "${TAG_NAMES}"
+if (( ${#TAG_ARRAY[@]} == 0 )); then
+    echo "Error: TAG_ARRAY is empty."
     exit 1
 fi
+
+RPM_URL=""
+for tag in "${TAG_ARRAY[@]}"; do
+    RPM_URL=$(jq -r --arg TAG_NAME "${tag}" --arg ARCH "${ARCH}" '.[] | select(.tag_name == $TAG_NAME) | .assets[] | select(.browser_download_url | endswith($ARCH + ".rpm")) | .browser_download_url' "${SRC_REPO_DIR}"/release_list.json)
+    if [[ -n "${RPM_URL}" ]]; then
+        break
+    fi
+done
+
 if [[ -z "${RPM_URL}" ]]; then
     echo "Unexpected empty RPM_URL. Exit."
     exit 1
 fi
+echo "Get RPM URL: ${RPM_URL}"
 RPM_FILE_NAME=$(basename ${RPM_URL})
 
 echo "Getting current repo revision..."
