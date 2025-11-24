@@ -14,11 +14,13 @@ if [ -z "$1" ]; then
 fi
 OSC_REPO_DIR="$1"; shift
 PACKAGE_NAME=$(basename "${OSC_REPO_DIR}")
-optspec="c"
+optspec="cf"
 while getopts "$optspec" optchar; do
     case $optchar in
         c) CHECK_ONLY=true
            ;;
+	f) FORCE_UPDATE=true
+	   ;;
         ?) echo "Invalid option -$optchar" ; exit 1;
     esac
 done
@@ -49,9 +51,15 @@ RPM_URL=""
 for tag in "${TAG_ARRAY[@]}"; do
     RPM_URL=$(jq -r --arg TAG_NAME "${tag}" --arg ARCH "${ARCH}" '.[] | select(.tag_name == $TAG_NAME) | .assets[] | select(.browser_download_url | endswith($ARCH + ".rpm")) | .browser_download_url' "${SRC_REPO_DIR}"/release_list.json)
     if [[ -n "${RPM_URL}" ]]; then
+	TAG_NAME=${tag}
         break
     fi
 done
+
+if [[ -z "${TAG_NAME}" ]]; then
+    echo "Unexpected empty TAG_NAME. Exit."
+    exit 1
+fi
 
 if [[ -z "${RPM_URL}" ]]; then
     echo "Unexpected empty RPM_URL. Exit."
@@ -62,7 +70,7 @@ RPM_FILE_NAME=$(basename ${RPM_URL})
 
 echo "Getting current repo revision..."
 CURRENT_TAG=$(awk '/^\s*%define ver/ {match($0, /[0-9.]+/, ary);print ary[0]}' ${OSC_REPO_DIR}/${OSC_SPEC_FILE})
-if [[ $CURRENT_TAG == $TAG_NAME ]]; then
+if [[ $CURRENT_TAG == $TAG_NAME && "${FORCE_UPDATE:-false}" == "false" ]]; then
     echo "The current tag is the latest: ${TAG_NAME}. Skipping the update."
     exit 0
 fi
