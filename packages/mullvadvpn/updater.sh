@@ -107,11 +107,11 @@ echo "Generate relay list..."
 cargo run -p mullvad-api --bin relay_list --release > "${OSC_REPO_DIR}"/relays.json
 
 
-echo "Vendor wireguard-go-rs/libwg..."
-pushd wireguard-go-rs/libwg
-go mod vendor
-tar czf "${OSC_REPO_DIR}"/wireguard-vendor.tar.gz --remove-files vendor
-popd
+# echo "Vendor wireguard-go-rs/libwg..."
+# pushd wireguard-go-rs/libwg
+# go mod vendor
+# tar czf "${OSC_REPO_DIR}"/wireguard-vendor.tar.gz --remove-files vendor
+# popd
 
 
 echo "Vendor Rust..."
