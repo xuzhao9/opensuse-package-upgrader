@@ -1,6 +1,12 @@
 {
+	"cadical": {
+		"obs": "science/cadical"
+	},
 	"chezscheme": {
 		"obs": "home:nuklly:branches:devel:languages:misc/chezscheme"
+	},
+	"lean4": {
+		"obs": "science/lean4"
 	},
 	"mullvadvpn": {
 		"obs": "home:nuklly/mullvadvpn"
